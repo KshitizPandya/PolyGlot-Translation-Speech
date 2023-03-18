@@ -3,6 +3,8 @@ from fastapi import FastAPI, Request, Response
 from google.cloud import texttospeech_v1
 from pydantic import BaseModel
 import re
+from typing import Optional
+from fastapi.responses import FileResponse
 
 app = FastAPI()
 
@@ -15,7 +17,7 @@ class ResponseModel(BaseModel):
     sound: str
 
 @app.post("/synthesize")
-async def synthesize_text(request: RequestModel) -> RequestModel:
+async def synthesize_text(request: RequestModel, format: Optional[str] = "mp3") -> dict:
     text_to_synthesize = request.text
     text_to_synthesize = re.sub('[^A-Za-z0-9 \/\\\\]+', '', text_to_synthesize)
 
@@ -42,9 +44,22 @@ async def synthesize_text(request: RequestModel) -> RequestModel:
         audio_config=audio_config
     )
 
-    mp3_file = response.audio_content
+    if format == "mp3":
+        file_extension = ".mp3"
+        media_type = "audio/mp3"
+    elif format == "wav":
+        file_extension = ".wav"
+        media_type = "audio/wav"
+    else:
+        raise ValueError("Unsupported audio format")
 
-    headers = {
-        "Content-Disposition": 'attachment; filename="output.mp3"'
+    with open("output" + file_extension, "wb") as out:
+        out.write(response.audio_content)
+
+    return {
+        "url": f"/audio/output{file_extension}"
     }
-    return Response(content=mp3_file, headers=headers, media_type="audio/mp3")
+
+@app.get("/audio/{filename}")
+async def get_audio(filename: str) -> FileResponse:
+    return FileResponse(filename)

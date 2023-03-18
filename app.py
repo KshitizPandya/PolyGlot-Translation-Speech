@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 
 app = FastAPI()
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "D:/CVMU HACKATHON/polyglot-379405-49f702545383.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "polyglot-379405-49f702545383.json"
 
 class RequestModel(BaseModel):
     text: str
